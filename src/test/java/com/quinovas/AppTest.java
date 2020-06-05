@@ -2,12 +2,25 @@ package com.quinovas;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.UUID;
 
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
 import com.amazon.sqs.javamessaging.ExtendedClientConfiguration;
+import com.amazon.sqs.javamessaging.ProviderConfiguration;
+import com.amazon.sqs.javamessaging.SQSConnection;
+import com.amazon.sqs.javamessaging.SQSConnectionFactory;
+import com.amazon.sqs.javamessaging.SQSQueueDestination;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
@@ -103,25 +116,62 @@ public class AppTest {
         Arrays.fill(chars, 'x');
         final String myLongString = new String(chars);
 
-        // Create a message queue for this example.
-        //final String QueueName = "MyQueue" + UUID.randomUUID().toString();
-        //final CreateQueueRequest createQueueRequest =
-        //        new CreateQueueRequest(QueueName);
-        //final String myQueueUrl = sqsExtended
-        //        .createQueue(createQueueRequest).getQueueUrl();
-        //System.out.println("Queue created.");
-
-        // Send the message.
-        //"https://queue.amazonaws.com/527681936864/Roger-inbound.fifo", 
 
         final SendMessageRequest myMessageRequest =
                 new SendMessageRequest(
                     "https://queue.amazonaws.com/527681936864/Roger-inbound.fifo", 
                     myLongString);
         myMessageRequest.setMessageGroupId("test-message-group-id");
+        //myMessageRequest.set
         sqsExtended.sendMessage(myMessageRequest);
         System.out.println("Sent the message.");                        
         assertTrue(true);
     }
-    
+
+    @Test
+    public void SendJMSMessage() {
+        // Create the connection factory based on the config  
+        final BasicAWSCredentials profileCredentials = new BasicAWSCredentials("AKIAXVXCLLXQLLEJ53WN", "jmXLL6BqYui22DvU9UWks8zXWqUXdDrEvxXwttjm");
+        final AmazonS3 s3 = AmazonS3ClientBuilder.standard()
+            .withRegion(Regions.US_EAST_1)
+            .withCredentials(new AWSStaticCredentialsProvider(profileCredentials))
+            .build();
+
+        final String S3_BUCKET_NAME = "autotec-dev-messaging";
+            
+
+        final ExtendedClientConfiguration extendedClientConfig =
+                new ExtendedClientConfiguration()
+                        .withLargePayloadSupportEnabled(s3, S3_BUCKET_NAME);
+            
+        final AmazonSQS sqsClient = AmazonSQSClientBuilder.standard().withRegion(Regions.US_EAST_1).withCredentials(new AWSStaticCredentialsProvider(profileCredentials)).build();
+              
+        final AmazonSQS sqsExtended = new QuinovasSQSEncryptedExtendedClient(
+                sqsClient, extendedClientConfig);
+
+        SQSConnectionFactory connectionFactory = new SQSConnectionFactory(
+                new ProviderConfiguration(),
+                sqsExtended);
+        
+        // Create the connection
+        SQSConnection connection;
+        try {
+            connection = connectionFactory.createConnection();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            MessageProducer producer = session.createProducer(session.createQueue("Roger-inbound.fifo"));
+            TextMessage message = session.createTextMessage("There are two hard things in computer science: cache invalidation, naming things, and off-by-one errors.");
+            message.setJMSCorrelationID("correlationID");
+            message.setStringProperty("JMSXGroupID", "Default");
+            producer.send(message);
+            System.out.println( "Send message " + message.getJMSMessageID() );
+            // Close the connection. This closes the session automatically
+            connection.close();
+        } catch (JMSException e) {
+            System.err.println( "Failed reading input: " + e.getMessage() );
+        }
+                    
+        // Create the session
+        System.out.println( "Connection closed" );
+        assertTrue(true);
+    }
 }

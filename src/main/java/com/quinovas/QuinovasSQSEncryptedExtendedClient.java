@@ -1341,7 +1341,7 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
               messageContentStream,
               messageContentStreamMetadata)
               .withSSEAwsKeyManagementParams(
-                new SSEAwsKeyManagementParams());
+                new SSEAwsKeyManagementParams("alias/messaging/Roger"));
 		try {
 			clientConfiguration.getAmazonS3Client().putObject(putObjectRequest);
 		} catch (AmazonServiceException e) {
