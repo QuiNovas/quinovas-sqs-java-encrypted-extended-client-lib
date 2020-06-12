@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -107,7 +108,7 @@ public class AppTest {
     }
 
     @Test
-    public void SendSQSMessage() {
+    public void sendSQSMessage() {
         final Properties props = getConfig(propertyFilePath);
         final BasicAWSCredentials profileCredentials = new BasicAWSCredentials(props.getProperty("aws.access_key_id"),
                 props.getProperty("aws.secret_access_key"));
@@ -173,18 +174,18 @@ public class AppTest {
         String messageBody = "There are two hard things in computer science: cache invalidation, naming things, and off-by-one errors.";
 
         if (large) {
-            final int stringLength = 300000;
+            final int stringLength = 100000;
             final char[] chars = new char[stringLength];
             Arrays.fill(chars, 'a');
             messageBody = new String(chars);
         }
 
-        if (!sendUniqueMessage) {
-            messageBody += UUID.randomUUID();
+        if (sendUniqueMessage) {
+            messageBody += UUID.randomUUID().toString();
         }
 
         final TextMessage message = session.createTextMessage(messageBody);
-        message.setJMSCorrelationID("correlationID");
+        message.setJMSCorrelationID(UUID.randomUUID().toString());
         message.setStringProperty("JMSXGroupID", props.getProperty("autotec.auctionId"));
         message.setStringProperty("AuctionID", props.getProperty("autotec.auctionId"));
         message.setStringProperty("AAMessageType", "somemessagetype");
@@ -192,7 +193,7 @@ public class AppTest {
     }
 
     @Test
-    public void SendJMSMessage() {
+    public void sendJMSMessage() {
         final Properties props = getConfig(propertyFilePath);
         try {
             SQSConnection connection = getConnection(props);
@@ -214,7 +215,37 @@ public class AppTest {
     }
 
     @Test
-    public void SendLargeJMS() {
+    public void sendMultipleJMSMessages() {
+        final Properties props = getConfig(propertyFilePath);
+        try {
+            SQSConnection connection = getConnection(props);
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final MessageProducer producer = session
+                    .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
+            Random random = new Random();
+            for(int x = 0; x < 50; x++) {
+                Boolean largeMessage = false;
+                if (random.nextFloat() < 0.3) {
+                    largeMessage = true;
+                }
+
+                final TextMessage message = createMessage(largeMessage, session, props, true);
+                producer.send(message);
+                System.out.println("Send message " + message.getJMSMessageID());
+            }
+            // Close the connection. This closes the session automatically
+            connection.close();
+        } catch (final JMSException e) {
+            System.err.println("Failed reading input: " + e.getMessage());
+        }
+
+        // Create the session
+        System.out.println("Connection closed");
+        assertTrue(true);
+    }
+
+    @Test
+    public void sendLargeJMS() {
         final Properties props = getConfig(propertyFilePath);
         try {
             SQSConnection connection = getConnection(props);
@@ -222,8 +253,6 @@ public class AppTest {
             final MessageProducer producer = session
                     .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
             final TextMessage message = createMessage(true, session, props, true);
-            producer.send(message);
-            System.out.println("Send message " + message.getJMSMessageID());
             producer.send(message);
             System.out.println("Send message " + message.getJMSMessageID());
             // Close the connection. This closes the session automatically
@@ -238,7 +267,7 @@ public class AppTest {
     }
 
     @Test
-    public void ReadJMSMessage() {
+    public void readJMSMessage() {
         final Properties props = getConfig(propertyFilePath);
         try {
             SQSConnection connection = getConnection(props);
@@ -246,7 +275,7 @@ public class AppTest {
             final MessageConsumer consumer = session
                     .createConsumer(session.createQueue(props.getProperty("autotec.outboundQueueName")));
             connection.start();
-            receiveMessages(session, consumer);
+            receiveMessages(session, consumer, false);
             connection.close();
         } catch (final JMSException e) {
             System.err.println("Failed reading input: " + e.getMessage());
@@ -257,21 +286,51 @@ public class AppTest {
         assertTrue(true);
     }
 
-    private static void receiveMessages(Session session, MessageConsumer consumer) {
+    @Test
+    public void readMultipleJMSMessages() {
+        final Properties props = getConfig(propertyFilePath);
+        try {
+            SQSConnection connection = getConnection(props);
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final MessageConsumer consumer = session
+                    .createConsumer(session.createQueue(props.getProperty("autotec.outboundQueueName")));
+            connection.start();
+            receiveMessages(session, consumer, true);
+            connection.close();
+        } catch (final JMSException e) {
+            System.err.println("Failed reading input: " + e.getMessage());
+        }
+
+        // Create the session
+        System.out.println("Connection closed");
+        assertTrue(true);
+    }
+
+    private static void receiveMessages(Session session, MessageConsumer consumer, Boolean multiple) {
         try {
             System.out.println("Waiting for messages");
-            Message message = consumer.receive(TimeUnit.MINUTES.toMillis(1));
-            if (message == null) {
-                System.out.println("Shutting down after 1 minute of silence");
+            int messageCounter = 0;
+            while(true) {
+                Message message = consumer.receive(TimeUnit.SECONDS.toMillis(10));
+                if (message == null) {
+                    System.out.println("Shutting down after 1 minute of silence");
+                    break;
+                }
+                System.out.println(message.getJMSCorrelationID());
+                System.out.println(message.getJMSMessageID());
+                System.out.println(message.getStringProperty("AuctionID"));
+                System.out.println(message.getStringProperty("AAMessageType"));
+                //String msgBody = ((TextMessage) message).getText();
+                //System.out.println(msgBody);
+                message.acknowledge();
+                System.out.println("Acknowledged message " + message.getJMSMessageID());
+                if (!multiple) {
+                    break;
+                }
+                messageCounter++;
+                System.out.println(messageCounter);
             }
-            System.out.println(message.getJMSCorrelationID());
-            System.out.println(message.getJMSMessageID());
-            System.out.println(message.getStringProperty("AuctionID"));
-            System.out.println(message.getStringProperty("AAMessageType"));
-            // String msgBody = ((TextMessage) message).getText();
 
-            message.acknowledge();
-            System.out.println("Acknowledged message " + message.getJMSMessageID());
         } catch (JMSException e) {
             System.err.println("Error receiving from SQS: " + e.getMessage());
             e.printStackTrace();
