@@ -313,7 +313,7 @@ public class AppTest {
             while(true) {
                 Message message = consumer.receive(TimeUnit.SECONDS.toMillis(10));
                 if (message == null) {
-                    System.out.println("Shutting down after 1 minute of silence");
+                    System.out.println("Shutting down after 10 seconds of silence");
                     break;
                 }
                 System.out.println(message.getJMSCorrelationID());
