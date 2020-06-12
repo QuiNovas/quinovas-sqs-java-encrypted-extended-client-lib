@@ -96,7 +96,7 @@ import org.apache.commons.logging.LogFactory;
 public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	private static final Log LOG = LogFactory.getLog(AmazonSQSExtendedClient.class);
 
-	private ExtendedClientConfiguration clientConfiguration;
+	private QuinovasExtendedClientConfiguration clientConfiguration;
 
 	/**
 	 * Constructs a new Amazon SQS extended client to invoke service methods on
@@ -111,7 +111,7 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 	 *            The Amazon SQS client to use to connect to Amazon SQS.
 	 */
 	public QuinovasSQSEncryptedExtendedClient(AmazonSQS sqsClient) {
-		this(sqsClient, new ExtendedClientConfiguration());
+		this(sqsClient, new QuinovasExtendedClientConfiguration());
 	}
 
 	/**
@@ -129,9 +129,9 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 	 *            The extended client configuration options controlling the
 	 *            functionality of this client.
 	 */
-	public QuinovasSQSEncryptedExtendedClient(AmazonSQS sqsClient, ExtendedClientConfiguration extendedClientConfig) {
+	public QuinovasSQSEncryptedExtendedClient(AmazonSQS sqsClient, QuinovasExtendedClientConfiguration extendedClientConfig) {
 		super(sqsClient);
-		this.clientConfiguration = new ExtendedClientConfiguration(extendedClientConfig);
+		this.clientConfiguration = new QuinovasExtendedClientConfiguration(extendedClientConfig);
 	}
 
 	/**
@@ -1341,7 +1341,7 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
               messageContentStream,
               messageContentStreamMetadata)
               .withSSEAwsKeyManagementParams(
-                new SSEAwsKeyManagementParams("alias/messaging/Roger"));
+                new SSEAwsKeyManagementParams(clientConfiguration.getKeyAlias()));
 		try {
 			clientConfiguration.getAmazonS3Client().putObject(putObjectRequest);
 		} catch (AmazonServiceException e) {
