@@ -363,7 +363,7 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 				String messageBody = message.getBody();
 
 				// read the S3 pointer from the message body JSON string.
-				MessageS3Pointer s3Pointer = readMessageS3PointerFromJSON(messageBody);
+				MessageS3Pointer s3Pointer = MessageS3Pointer.FromS3JsonString(messageBody);
 
 				String s3MsgBucketName = s3Pointer.getS3BucketName();
 				String s3MsgKey = s3Pointer.getS3Key();
@@ -1155,20 +1155,6 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 		return modifiedReceiptHandle;
 	}
 
-	private MessageS3Pointer readMessageS3PointerFromJSON(String messageBody) {
-
-		MessageS3Pointer s3Pointer = null;
-		try {
-			JsonDataConverter jsonDataConverter = new JsonDataConverter();
-			s3Pointer = jsonDataConverter.deserializeFromJson(messageBody, MessageS3Pointer.class);
-		} catch (Exception e) {
-			String errorMessage = "Failed to read the S3 object pointer from an SQS message. Message was not received.";
-			LOG.error(errorMessage, e);
-			throw new AmazonClientException(errorMessage, e);
-		}
-		return s3Pointer;
-	}
-
 	private String getOrigReceiptHandle(String receiptHandle) {
 		int secondOccurence = receiptHandle.indexOf(QuinovasSQSEncryptedExtendedClientConstants.S3_KEY_MARKER,
 				receiptHandle.indexOf(QuinovasSQSEncryptedExtendedClientConstants.S3_KEY_MARKER) + 1);
@@ -1276,7 +1262,7 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 
 		// Convert S3 pointer (bucket name, key, etc) to JSON string
 		MessageS3Pointer s3Pointer = new MessageS3Pointer(clientConfiguration.getS3BucketName(), s3Key);
-		String s3PointerStr = getJSONFromS3Pointer(s3Pointer);
+		String s3PointerStr = s3Pointer.toString();
 
 		// Storing S3 pointer in the message body.
 		batchEntry.setMessageBody(s3PointerStr);
@@ -1310,25 +1296,12 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 		// Convert S3 pointer (bucket name, key, etc) to JSON string
 		MessageS3Pointer s3Pointer = new MessageS3Pointer(clientConfiguration.getS3BucketName(), s3Key);
 
-		String s3PointerStr = getJSONFromS3Pointer(s3Pointer);
+		String s3PointerStr = s3Pointer.toString();
 
 		// Storing S3 pointer in the message body.
 		sendMessageRequest.setMessageBody(s3PointerStr);
 
 		return sendMessageRequest;
-	}
-
-	private String getJSONFromS3Pointer(MessageS3Pointer s3Pointer) {
-		String s3PointerStr = null;
-		try {
-			JsonDataConverter jsonDataConverter = new JsonDataConverter();
-			s3PointerStr = jsonDataConverter.serializeToJson(s3Pointer);
-		} catch (Exception e) {
-			String errorMessage = "Failed to convert S3 object pointer to text. Message was not sent.";
-			LOG.error(errorMessage, e);
-			throw new AmazonClientException(errorMessage, e);
-		}
-		return s3PointerStr;
 	}
 
 	private void storeTextInS3(String s3Key, String messageContentStr, Long messageContentSize) {
