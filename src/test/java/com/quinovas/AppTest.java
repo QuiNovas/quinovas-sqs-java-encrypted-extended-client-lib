@@ -1,5 +1,6 @@
 package com.quinovas;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -9,8 +10,12 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +50,12 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.util.StringUtils;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.quinovas.*;
 
 import org.apache.http.io.SessionOutputBuffer;
@@ -62,7 +73,7 @@ public class AppTest {
         assertTrue(true);
     }
 
-    private final String propertyFilePath= "src/test/resources/config.properties";
+    private final String propertyFilePath = "src/test/resources/config.properties";
 
     private Properties getConfig(final String file) {
         BufferedReader reader;
@@ -121,15 +132,14 @@ public class AppTest {
     public void SendSQSMessage() {
         final Properties props = getConfig(propertyFilePath);
         final BasicAWSCredentials profileCredentials = new BasicAWSCredentials(props.getProperty("aws.access_key_id"),
-            props.getProperty("aws.secret_access_key"));
+                props.getProperty("aws.secret_access_key"));
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(Regions.US_EAST_1)
                 .withCredentials(new AWSStaticCredentialsProvider(profileCredentials)).build();
 
         final String S3_BUCKET_NAME = props.getProperty("autotec.messagesBucket");
 
         final QuinovasExtendedClientConfiguration extendedClientConfig = new QuinovasExtendedClientConfiguration()
-                .withLargePayloadSupportEnabled(s3, S3_BUCKET_NAME)
-                .withMessageSizeThreshold(64 * 1024)
+                .withLargePayloadSupportEnabled(s3, S3_BUCKET_NAME).withMessageSizeThreshold(64 * 1024)
                 .withKeyAlias(props.getProperty("autotec.keyId"));
 
         final AmazonSQS sqsClient = AmazonSQSClientBuilder.standard().withRegion(Regions.US_EAST_1)
@@ -146,7 +156,7 @@ public class AppTest {
         final String myLongString = new String(chars);
 
         final SendMessageRequest myMessageRequest = new SendMessageRequest(
-            props.getProperty("autotec.outboundQueueUrl"), myLongString);
+                props.getProperty("autotec.outboundQueueUrl"), myLongString);
         myMessageRequest.setMessageGroupId("test-message-group-id");
         // myMessageRequest.set
         sqsExtended.sendMessage(myMessageRequest);
@@ -154,13 +164,11 @@ public class AppTest {
         assertTrue(true);
     }
 
-    @Test
-    public void SendJMSMessage() {
-        final Properties props = getConfig(propertyFilePath);
+    private SQSConnection getConnection(Properties props) throws JMSException {
         // Create the connection factory based on the config
         final BasicAWSCredentials profileCredentials = new BasicAWSCredentials(props.getProperty("aws.access_key_id"),
-            props.getProperty("aws.secret_access_key"));
-                    
+                props.getProperty("aws.secret_access_key"));
+
         final Regions region = Regions.fromName(props.getProperty("aws.region"));
 
         final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region)
@@ -169,8 +177,7 @@ public class AppTest {
         final String S3_BUCKET_NAME = props.getProperty("autotec.messagesBucket");
 
         final QuinovasExtendedClientConfiguration extendedClientConfig = new QuinovasExtendedClientConfiguration()
-                .withLargePayloadSupportEnabled(s3, S3_BUCKET_NAME)
-                .withMessageSizeThreshold(64 * 1024)
+                .withLargePayloadSupportEnabled(s3, S3_BUCKET_NAME).withMessageSizeThreshold(64 * 1024)
                 .withKeyAlias(props.getProperty("autotec.keyId"));
 
         final AmazonSQS sqsClient = AmazonSQSClientBuilder.standard().withRegion(region)
@@ -181,87 +188,103 @@ public class AppTest {
         final SQSConnectionFactory connectionFactory = new SQSConnectionFactory(new ProviderConfiguration(),
                 sqsExtended);
 
-        // Create the connection
-        SQSConnection connection;
+        return connectionFactory.createConnection();
+    }
+
+    private TextMessage createMessage(Boolean large, Session session, Properties props) throws JMSException {
+        String messageBody = "There are two hard things in computer science: cache invalidation, naming things, and off-by-one errors.";
+
+        if (large) {
+            final int stringLength = 300000;
+            final char[] chars = new char[stringLength];
+            Arrays.fill(chars, 'a');
+            messageBody = new String(chars);
+        }
+
+        final TextMessage message = session.createTextMessage(messageBody);
+        message.setJMSCorrelationID("correlationID");
+        message.setStringProperty("JMSXGroupID", props.getProperty("autotec.auctionId"));
+        message.setStringProperty("AuctionID", props.getProperty("autotec.auctionId"));
+        message.setStringProperty("AAMessageType", "somemessagetype");
+        return message;
+    }
+
+    @Test
+    public void SendJMSMessage() {
+        final Properties props = getConfig(propertyFilePath);
         try {
-            connection = connectionFactory.createConnection();
+            SQSConnection connection = getConnection(props);
             final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            final MessageProducer producer = session.createProducer(session.createQueue(props.getProperty("autotec.outboundQueueName")));
-            final TextMessage message = session.createTextMessage(
-                    "There are two hard things in computer science: cache invalidation, naming things, and off-by-one errors.");
-            message.setJMSCorrelationID("correlationID");
-            message.setStringProperty("JMSXGroupID", props.getProperty("autotec.auctionId"));
-            message.setStringProperty("AuctionID", props.getProperty("autotec.auctionId"));
-            message.setStringProperty("AAMessageType", "somemessagetype");
+            final MessageProducer producer = session
+                    .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
+            final TextMessage message = createMessage(false, session, props);
             producer.send(message);
             System.out.println("Send message " + message.getJMSMessageID());
             // Close the connection. This closes the session automatically
             connection.close();
         } catch (final JMSException e) {
-            System.err.println( "Failed reading input: " + e.getMessage() );
+            System.err.println("Failed reading input: " + e.getMessage());
         }
-                    
+
         // Create the session
-        System.out.println( "Connection closed" );
+        System.out.println("Connection closed");
+        assertTrue(true);
+    }
+
+    @Test
+    public void SendLargeJMSMessage() {
+        final Properties props = getConfig(propertyFilePath);
+        try {
+            SQSConnection connection = getConnection(props);
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final MessageProducer producer = session
+                    .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
+            final TextMessage message = createMessage(true, session, props);
+            producer.send(message);
+            System.out.println("Send message " + message.getJMSMessageID());
+            // Close the connection. This closes the session automatically
+            connection.close();
+        } catch (final JMSException e) {
+            System.err.println("Failed reading input: " + e.getMessage());
+        }
+
+        // Create the session
+        System.out.println("Connection closed");
         assertTrue(true);
     }
 
     @Test
     public void ReadJMSMessage() {
         final Properties props = getConfig(propertyFilePath);
-
-        // Create the connection factory based on the config
-        final BasicAWSCredentials profileCredentials = new BasicAWSCredentials(props.getProperty("aws.access_key_id"),
-            props.getProperty("aws.secret_access_key"));
-                    
-        final Regions region = Regions.fromName(props.getProperty("aws.region"));
-
-        final AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(region)
-                .withCredentials(new AWSStaticCredentialsProvider(profileCredentials)).build();
-
-        final String S3_BUCKET_NAME = props.getProperty("autotec.messagesBucket");
-
-        final QuinovasExtendedClientConfiguration extendedClientConfig = new QuinovasExtendedClientConfiguration()
-                .withLargePayloadSupportEnabled(s3, S3_BUCKET_NAME)
-                .withMessageSizeThreshold(64 * 1024)
-                .withKeyAlias(props.getProperty("autotec.keyId"));
-
-        final AmazonSQS sqsClient = AmazonSQSClientBuilder.standard().withRegion(region)
-                .withCredentials(new AWSStaticCredentialsProvider(profileCredentials)).build();
-
-        final AmazonSQS sqsExtended = new QuinovasSQSEncryptedExtendedClient(sqsClient, extendedClientConfig);
-
-        final SQSConnectionFactory connectionFactory = new SQSConnectionFactory(new ProviderConfiguration(),
-                sqsExtended);
-
-        // Create the connection
-        SQSConnection connection;
         try {
-            connection = connectionFactory.createConnection();
+            SQSConnection connection = getConnection(props);
             final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            final MessageConsumer consumer = session.createConsumer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
+            final MessageConsumer consumer = session
+                    .createConsumer(session.createQueue(props.getProperty("autotec.outboundQueueName")));
             connection.start();
             receiveMessages(session, consumer);
             connection.close();
         } catch (final JMSException e) {
             System.err.println("Failed reading input: " + e.getMessage());
         }
-                    
+
         // Create the session
-        System.out.println( "Connection closed" );
+        System.out.println("Connection closed");
         assertTrue(true);
     }
 
-    private static void receiveMessages( Session session, MessageConsumer consumer ) {
+    private static void receiveMessages(Session session, MessageConsumer consumer) {
         try {
             System.out.println("Waiting for messages");
             Message message = consumer.receive(TimeUnit.MINUTES.toMillis(1));
-            if(message == null) {
+            if (message == null) {
                 System.out.println("Shutting down after 1 minute of silence");
-            } 
+            }
             System.out.println(message.getJMSCorrelationID());
             System.out.println(message.getJMSMessageID());
             System.out.println(message.getStringProperty("AuctionID"));
+            System.out.println(message.getStringProperty("AAMessageType"));
+            // String msgBody = ((TextMessage) message).getText();
 
             message.acknowledge();
             System.out.println("Acknowledged message " + message.getJMSMessageID());
@@ -270,4 +293,23 @@ public class AppTest {
             e.printStackTrace();
         }
     }
+
+    @Test
+    public void canDeserializeS3Pointer() {
+        String pointer = "[\"com.amazon.sqs.javamessaging.MessageS3Pointer\",{\"s3BucketName\":\"autotec-dev-messaging\",\"s3Key\":\"988ab98b-d0ae-4cd2-9a95-7478f2486aad\"}]";
+        MessageS3Pointer msg = MessageS3Pointer.FromS3JsonString(pointer);
+        System.out.println(msg.getS3BucketName());
+        System.out.println(msg.getS3Key());
+        assertEquals(msg.getS3BucketName(), "autotec-dev-messaging");
+        assertEquals(msg.getS3Key(), "988ab98b-d0ae-4cd2-9a95-7478f2486aad");
+    }
+
+    @Test
+    public void canSerializeS3Pointer() {
+        String pointer =
+            "[\"com.amazon.sqs.javamessaging.MessageS3Pointer\",{\"s3BucketName\":\"autotec-dev-messaging\",\"s3Key\":\"988ab98b-d0ae-4cd2-9a95-7478f2486aad\"}]";
+        MessageS3Pointer msg = new MessageS3Pointer("autotec-dev-messaging", "988ab98b-d0ae-4cd2-9a95-7478f2486aad");
+        assertEquals(msg.toString(), pointer);
+    }
+
 }

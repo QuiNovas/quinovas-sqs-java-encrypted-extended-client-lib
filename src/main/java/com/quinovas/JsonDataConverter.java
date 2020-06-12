@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
  * provided for serializing an object to JSON and deserializing from JSON to an
  * object.
  */
-class JsonDataConverter {
+public class JsonDataConverter {
 
 	protected final ObjectMapper objectMapper;
 
@@ -35,5 +35,4 @@ class JsonDataConverter {
 	public <T> T deserializeFromJson(String jsonText, Class<T> objectType) throws Exception {
 		return objectMapper.readValue(jsonText, objectType);
 	}
-
 }

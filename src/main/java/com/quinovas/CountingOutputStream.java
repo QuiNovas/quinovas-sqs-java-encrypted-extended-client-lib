@@ -8,7 +8,7 @@ import java.io.OutputStream;
  * String.getBytes().length, it is more efficient and reliable for large
  * strings.
  */
-class CountingOutputStream extends OutputStream {
+public class CountingOutputStream extends OutputStream {
 	private long totalSize;
 
 	@Override
