@@ -198,15 +198,6 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 			throw new AmazonClientException(errorMessage);
 		}
 
-		try {
-			MessageDigest digest = MessageDigest.getInstance("SHA_256");
-			final byte[] hashbytes = digest.digest(sendMessageRequest.getMessageBody().getBytes(StandardCharsets.UTF_8));
-			String sha3_256hex = hex(hashbytes);	
-			sendMessageRequest.setMessageDeduplicationId(sha3_256hex);
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-
 		if (clientConfiguration.isAlwaysThroughS3() || isLarge(sendMessageRequest)) {
 			sendMessageRequest = storeMessageInS3(sendMessageRequest);
 		}
