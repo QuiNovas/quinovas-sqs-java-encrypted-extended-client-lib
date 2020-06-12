@@ -238,54 +238,6 @@ public class AppTest {
     }
 
     @Test
-    public void SendDupeLargeJMS() {
-        final Properties props = getConfig(propertyFilePath);
-        try {
-            SQSConnection connection = getConnection(props);
-            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            final MessageProducer producer = session
-                    .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
-            final TextMessage message = createMessage(true, session, props, false);
-            producer.send(message);
-            System.out.println("Send message " + message.getJMSMessageID());
-            producer.send(message);
-            System.out.println("Send message " + message.getJMSMessageID());
-            // Close the connection. This closes the session automatically
-            connection.close();
-        } catch (final JMSException e) {
-            System.err.println("Failed reading input: " + e.getMessage());
-        }
-
-        // Create the session
-        System.out.println("Connection closed");
-        assertTrue(true);
-    }
-
-    @Test
-    public void SendDupeSmallJMS() {
-        final Properties props = getConfig(propertyFilePath);
-        try {
-            SQSConnection connection = getConnection(props);
-            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            final MessageProducer producer = session
-                    .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
-            final TextMessage message = createMessage(false, session, props, false);
-            producer.send(message);
-            System.out.println("Send message " + message.getJMSMessageID());
-            producer.send(message);
-            System.out.println("Send message " + message.getJMSMessageID());
-            // Close the connection. This closes the session automatically
-            connection.close();
-        } catch (final JMSException e) {
-            System.err.println("Failed reading input: " + e.getMessage());
-        }
-
-        // Create the session
-        System.out.println("Connection closed");
-        assertTrue(true);
-    }
-
-    @Test
     public void ReadJMSMessage() {
         final Properties props = getConfig(propertyFilePath);
         try {
