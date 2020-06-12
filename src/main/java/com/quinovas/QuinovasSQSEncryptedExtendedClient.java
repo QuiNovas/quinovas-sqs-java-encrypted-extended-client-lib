@@ -22,13 +22,14 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Map.Entry;
 
 import com.amazon.sqs.javamessaging.AmazonSQSExtendedClient;
-import com.amazon.sqs.javamessaging.ExtendedClientConfiguration;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.model.GetObjectRequest;
@@ -100,15 +101,14 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 
 	/**
 	 * Constructs a new Amazon SQS extended client to invoke service methods on
-	 * Amazon SQS with extended functionality using the specified Amazon SQS
-	 * client object.
+	 * Amazon SQS with extended functionality using the specified Amazon SQS client
+	 * object.
 	 *
 	 * <p>
-	 * All service calls made using this new client object are blocking, and
-	 * will not return until the service call completes.
+	 * All service calls made using this new client object are blocking, and will
+	 * not return until the service call completes.
 	 *
-	 * @param sqsClient
-	 *            The Amazon SQS client to use to connect to Amazon SQS.
+	 * @param sqsClient The Amazon SQS client to use to connect to Amazon SQS.
 	 */
 	public QuinovasSQSEncryptedExtendedClient(AmazonSQS sqsClient) {
 		this(sqsClient, new QuinovasExtendedClientConfiguration());
@@ -116,42 +116,50 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 
 	/**
 	 * Constructs a new Amazon SQS extended client to invoke service methods on
-	 * Amazon SQS with extended functionality using the specified Amazon SQS
-	 * client object.
+	 * Amazon SQS with extended functionality using the specified Amazon SQS client
+	 * object.
 	 *
 	 * <p>
-	 * All service calls made using this new client object are blocking, and
-	 * will not return until the service call completes.
+	 * All service calls made using this new client object are blocking, and will
+	 * not return until the service call completes.
 	 *
-	 * @param sqsClient
-	 *            The Amazon SQS client to use to connect to Amazon SQS.
-	 * @param extendedClientConfig
-	 *            The extended client configuration options controlling the
-	 *            functionality of this client.
+	 * @param sqsClient            The Amazon SQS client to use to connect to Amazon
+	 *                             SQS.
+	 * @param extendedClientConfig The extended client configuration options
+	 *                             controlling the functionality of this client.
 	 */
-	public QuinovasSQSEncryptedExtendedClient(AmazonSQS sqsClient, QuinovasExtendedClientConfiguration extendedClientConfig) {
+	public QuinovasSQSEncryptedExtendedClient(AmazonSQS sqsClient,
+			QuinovasExtendedClientConfiguration extendedClientConfig) {
 		super(sqsClient);
 		this.clientConfiguration = new QuinovasExtendedClientConfiguration(extendedClientConfig);
 	}
 
+	private static String hex(byte[] bytes) {
+		StringBuilder result = new StringBuilder();
+		for (byte aByte : bytes) {
+			result.append(String.format("%02x", aByte));
+		}
+		return result.toString();
+	}
+
 	/**
 	 * <p>
-	 * Delivers a message to the specified queue and uploads the message payload
-	 * to Amazon S3 if necessary.
+	 * Delivers a message to the specified queue and uploads the message payload to
+	 * Amazon S3 if necessary.
 	 * </p>
 	 * <p>
 	 * <b>IMPORTANT:</b> The following list shows the characters (in Unicode)
 	 * allowed in your message, according to the W3C XML specification. For more
 	 * information, go to http://www.w3.org/TR/REC-xml/#charsets If you send any
-	 * characters not included in the list, your request will be rejected. #x9 |
-	 * #xA | #xD | [#x20 to #xD7FF] | [#xE000 to #xFFFD] | [#x10000 to #x10FFFF]
+	 * characters not included in the list, your request will be rejected. #x9 | #xA
+	 * | #xD | [#x20 to #xD7FF] | [#xE000 to #xFFFD] | [#x10000 to #x10FFFF]
 	 * </p>
 	 *
-	 * <b>IMPORTANT:</b> The input object may be modified by the method. </p>
+	 * <b>IMPORTANT:</b> The input object may be modified by the method.
+	 * </p>
 	 *
-	 * @param sendMessageRequest
-	 *            Container for the necessary parameters to execute the
-	 *            SendMessage service method on AmazonSQS.
+	 * @param sendMessageRequest Container for the necessary parameters to execute
+	 *                           the SendMessage service method on AmazonSQS.
 	 *
 	 * @return The response from the SendMessage service method, as returned by
 	 *         AmazonSQS.
@@ -159,14 +167,15 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 	 * @throws InvalidMessageContentsException
 	 * @throws UnsupportedOperationException
 	 *
-	 * @throws AmazonClientException
-	 *             If any internal errors are encountered inside the client
-	 *             while attempting to make the request or handle the response.
-	 *             For example if a network connection is not available.
-	 * @throws AmazonServiceException
-	 *             If an error response is returned by AmazonSQS indicating
-	 *             either a problem with the data in the request, or a server
-	 *             side issue.
+	 * @throws AmazonClientException           If any internal errors are
+	 *                                         encountered inside the client while
+	 *                                         attempting to make the request or
+	 *                                         handle the response. For example if a
+	 *                                         network connection is not available.
+	 * @throws AmazonServiceException          If an error response is returned by
+	 *                                         AmazonSQS indicating either a problem
+	 *                                         with the data in the request, or a
+	 *                                         server side issue.
 	 */
 	public SendMessageResult sendMessage(SendMessageRequest sendMessageRequest) {
 
@@ -176,7 +185,8 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 			throw new AmazonClientException(errorMessage);
 		}
 
-		sendMessageRequest.getRequestClientOptions().appendUserAgent(QuinovasSQSEncryptedExtendedClientConstants.USER_AGENT_HEADER);
+		sendMessageRequest.getRequestClientOptions()
+				.appendUserAgent(QuinovasSQSEncryptedExtendedClientConstants.USER_AGENT_HEADER);
 
 		if (!clientConfiguration.isLargePayloadSupportEnabled()) {
 			return super.sendMessage(sendMessageRequest);
@@ -186,6 +196,15 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 			String errorMessage = "messageBody cannot be null or empty.";
 			LOG.error(errorMessage);
 			throw new AmazonClientException(errorMessage);
+		}
+
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA_256");
+			final byte[] hashbytes = digest.digest(sendMessageRequest.getMessageBody().getBytes(StandardCharsets.UTF_8));
+			String sha3_256hex = hex(hashbytes);	
+			sendMessageRequest.setMessageDeduplicationId(sha3_256hex);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
 		}
 
 		if (clientConfiguration.isAlwaysThroughS3() || isLarge(sendMessageRequest)) {

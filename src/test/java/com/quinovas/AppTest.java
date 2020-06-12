@@ -5,17 +5,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -27,38 +21,22 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import com.amazon.sqs.javamessaging.ExtendedClientConfiguration;
 import com.amazon.sqs.javamessaging.ProviderConfiguration;
 import com.amazon.sqs.javamessaging.SQSConnection;
 import com.amazon.sqs.javamessaging.SQSConnectionFactory;
-import com.amazon.sqs.javamessaging.SQSQueueDestination;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Builder;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazon.sqs.javamessaging.AmazonSQSExtendedClient;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.util.StringUtils;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
-import com.quinovas.*;
-
-import org.apache.http.io.SessionOutputBuffer;
 import org.junit.Test;
 
 /**
@@ -191,7 +169,7 @@ public class AppTest {
         return connectionFactory.createConnection();
     }
 
-    private TextMessage createMessage(Boolean large, Session session, Properties props) throws JMSException {
+    private TextMessage createMessage(Boolean large, Session session, Properties props, Boolean sendUniqueMessage) throws JMSException {
         String messageBody = "There are two hard things in computer science: cache invalidation, naming things, and off-by-one errors.";
 
         if (large) {
@@ -199,6 +177,10 @@ public class AppTest {
             final char[] chars = new char[stringLength];
             Arrays.fill(chars, 'a');
             messageBody = new String(chars);
+        }
+
+        if (!sendUniqueMessage) {
+            messageBody += UUID.randomUUID();
         }
 
         final TextMessage message = session.createTextMessage(messageBody);
@@ -217,7 +199,7 @@ public class AppTest {
             final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             final MessageProducer producer = session
                     .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
-            final TextMessage message = createMessage(false, session, props);
+            final TextMessage message = createMessage(false, session, props, true);
             producer.send(message);
             System.out.println("Send message " + message.getJMSMessageID());
             // Close the connection. This closes the session automatically
@@ -232,14 +214,64 @@ public class AppTest {
     }
 
     @Test
-    public void SendLargeJMSMessage() {
+    public void SendLargeJMS() {
         final Properties props = getConfig(propertyFilePath);
         try {
             SQSConnection connection = getConnection(props);
             final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             final MessageProducer producer = session
                     .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
-            final TextMessage message = createMessage(true, session, props);
+            final TextMessage message = createMessage(true, session, props, true);
+            producer.send(message);
+            System.out.println("Send message " + message.getJMSMessageID());
+            producer.send(message);
+            System.out.println("Send message " + message.getJMSMessageID());
+            // Close the connection. This closes the session automatically
+            connection.close();
+        } catch (final JMSException e) {
+            System.err.println("Failed reading input: " + e.getMessage());
+        }
+
+        // Create the session
+        System.out.println("Connection closed");
+        assertTrue(true);
+    }
+
+    @Test
+    public void SendDupeLargeJMS() {
+        final Properties props = getConfig(propertyFilePath);
+        try {
+            SQSConnection connection = getConnection(props);
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final MessageProducer producer = session
+                    .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
+            final TextMessage message = createMessage(true, session, props, false);
+            producer.send(message);
+            System.out.println("Send message " + message.getJMSMessageID());
+            producer.send(message);
+            System.out.println("Send message " + message.getJMSMessageID());
+            // Close the connection. This closes the session automatically
+            connection.close();
+        } catch (final JMSException e) {
+            System.err.println("Failed reading input: " + e.getMessage());
+        }
+
+        // Create the session
+        System.out.println("Connection closed");
+        assertTrue(true);
+    }
+
+    @Test
+    public void SendDupeSmallJMS() {
+        final Properties props = getConfig(propertyFilePath);
+        try {
+            SQSConnection connection = getConnection(props);
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final MessageProducer producer = session
+                    .createProducer(session.createQueue(props.getProperty("autotec.inboundQueueName")));
+            final TextMessage message = createMessage(false, session, props, false);
+            producer.send(message);
+            System.out.println("Send message " + message.getJMSMessageID());
             producer.send(message);
             System.out.println("Send message " + message.getJMSMessageID());
             // Close the connection. This closes the session automatically
