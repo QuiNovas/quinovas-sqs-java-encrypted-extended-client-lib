@@ -16,7 +16,17 @@ You can download release builds through the [releases section of this](https://g
 
 For more information on using the amazon-sqs-java-extended-client-lib, see our getting started guide [here](http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/s3-messages.html).
 
-## Example
+## JAVA Example
+
+* Configuration items needed for example:
+  - aws access key (aws.access_key_id)
+  - aws secret access key (aws.secret_access_key)
+  - aws region (aws.region)
+  - s3 bucket name (messagesBucket)
+  - kms key (aws.kms_key)
+  - group ID (groupID)
+  - SQS queue name (outboundQueueName)
+
 
 ```java
     private SQSConnection getConnection(Properties props) throws JMSException {
