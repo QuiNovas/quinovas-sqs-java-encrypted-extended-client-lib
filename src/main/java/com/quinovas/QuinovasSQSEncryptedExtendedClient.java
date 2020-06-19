@@ -740,12 +740,6 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
 	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
-	 * </p>
 	 *
 	 * @param sendMessageBatchRequest
 	 *            Container for the necessary parameters to execute the
@@ -826,12 +820,6 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
 	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
-	 * </p>
 	 *
 	 * @param queueUrl
 	 *            The URL of the Amazon SQS queue to take action on.
@@ -878,12 +866,6 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 	 * <b>NOTE:</b>Some API actions take lists of parameters. These lists are
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
 	 * </p>
 	 *
 	 * @param deleteMessageBatchRequest
@@ -951,12 +933,6 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
 	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
-	 * </p>
 	 *
 	 * @param queueUrl
 	 *            The URL of the Amazon SQS queue to take action on.
@@ -1016,12 +992,6 @@ public class QuinovasSQSEncryptedExtendedClient extends QuinovasSQSEncryptedExte
 	 * <b>NOTE:</b>Some API actions take lists of parameters. These lists are
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
 	 * </p>
 	 *
 	 * @param changeMessageVisibilityBatchRequest

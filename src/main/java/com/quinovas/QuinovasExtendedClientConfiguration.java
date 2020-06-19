@@ -239,13 +239,12 @@ public class QuinovasExtendedClientConfiguration {
 	}
 	
 	/**
-	 * Sets the message size threshold for storing message payloads in Amazon
-	 * S3.
+	 * Sets the kms key alias for storing messages in S3.
 	 *
-	 * @param messageSizeThreshold
-	 *            Message size threshold to be used for storing in Amazon S3.
+	 * @param keyAlias
+	 *            The kms key alias to use for S3 in AWS.
 	 *            Default: 256KB.
-	 * @return the updated ExtendedClientConfiguration object.
+	 * @return QuinovasExtendedClientConfiguration.
 	 */
 	public QuinovasExtendedClientConfiguration withKeyAlias(String keyAlias) {
 		setKeyAlias(keyAlias);

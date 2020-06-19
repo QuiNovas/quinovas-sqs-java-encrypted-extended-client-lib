@@ -754,12 +754,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
 	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
-	 * </p>
 	 *
 	 * @param getQueueAttributesRequest
 	 *            Container for the necessary parameters to execute the
@@ -817,12 +811,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * <b>NOTE:</b>Some API actions take lists of parameters. These lists are
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
 	 * </p>
 	 *
 	 * @param sendMessageBatchRequest
@@ -1025,12 +1013,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
 	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
-	 * </p>
 	 *
 	 * @param deleteMessageBatchRequest
 	 *            Container for the necessary parameters to execute the
@@ -1092,12 +1074,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
 	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
-	 * </p>
 	 *
 	 * @param createQueueRequest
 	 *            Container for the necessary parameters to execute the
@@ -1147,12 +1123,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * <b>NOTE:</b>Some API actions take lists of parameters. These lists are
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
 	 * </p>
 	 *
 	 * @param addPermissionRequest
@@ -1297,12 +1267,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * <b>NOTE:</b>Some API actions take lists of parameters. These lists are
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
 	 * </p>
 	 * 
 	 * @param queueUrl
@@ -1540,12 +1504,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
 	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
-	 * </p>
 	 * 
 	 * @param queueUrl
 	 *            The URL of the Amazon SQS queue to take action on.
@@ -1604,12 +1562,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * <b>NOTE:</b>Some API actions take lists of parameters. These lists are
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
 	 * </p>
 	 * 
 	 * @param queueUrl
@@ -1736,12 +1688,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
 	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
-	 * </p>
 	 * 
 	 * @param queueUrl
 	 *            The URL of the Amazon SQS queue to take action on.
@@ -1804,12 +1750,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
 	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
-	 * </p>
 	 * 
 	 * @param queueName
 	 *            The name for the queue to be created.
@@ -1857,12 +1797,6 @@ abstract class QuinovasSQSEncryptedExtendedClientBase implements AmazonSQS {
 	 * <b>NOTE:</b>Some API actions take lists of parameters. These lists are
 	 * specified using the param.n notation. Values of n are integers starting
 	 * from 1. For example, a parameter list with two elements looks like this:
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.1=this</code>
-	 * </p>
-	 * <p>
-	 * <code>&Attribute.2=that</code>
 	 * </p>
 	 * 
 	 * @param queueUrl
